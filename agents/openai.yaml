@@ -1,0 +1,13 @@
+interface:
+  display_name: Pull Garmin Data
+  short_description: Retrieve Garmin data using its official Personal API
+  default_prompt: Use $pull-garmin-data to retrieve my requested Garmin data safely.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
