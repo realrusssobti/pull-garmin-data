@@ -39,6 +39,48 @@ def activity_args(**kw):
 
 
 class PullTests(unittest.TestCase):
+    def test_network_placeholder_preserved_in_fixed_host_header(self):
+        # Synthetic stand-in, not the platform's actual placeholder format.
+        placeholder = "SYNTHETIC_NETWORK_SECRET_PLACEHOLDER"
+        opener = Mock()
+        opener.open.return_value = Response(media="text/plain", raw=SYNTHETIC_TOKEN.encode())
+        self.assertEqual(g.exchange_api_key(placeholder, approved=True, opener=opener), SYNTHETIC_TOKEN)
+        req = opener.open.call_args.args[0]
+        self.assertEqual(req.full_url, g.ORIGIN + g.TOKEN_PATH)
+        self.assertEqual(req.get_header("Authorization"), "ApiKey " + placeholder)
+        self.assertEqual(req.data, b"")
+        self.assertEqual(req.method, "POST")
+        self.assertEqual(opener.open.call_count, 1)
+
+    def test_default_transport_preserves_configured_https_proxy(self):
+        # Construct handlers only. This test makes no network connection.
+        with patch.dict(os.environ, {"https_proxy": "http://synthetic-proxy.invalid:8080"}, clear=True):
+            transport = g.request.build_opener(g.NoRedirect())
+            proxy_handlers = [h for h in transport.handlers if isinstance(h, g.request.ProxyHandler)]
+        self.assertEqual(len(proxy_handlers), 1)
+        self.assertEqual(proxy_handlers[0].proxies["https"], "http://synthetic-proxy.invalid:8080")
+
+    def test_network_placeholder_cli_outputs_metadata_only(self):
+        placeholder = "SYNTHETIC_NETWORK_SECRET_PLACEHOLDER"
+        exchange_transport = Mock()
+        exchange_transport.open.return_value = Response(media="text/plain", raw=SYNTHETIC_TOKEN.encode())
+        read_transport = Mock()
+        read_transport.open.return_value = Response([{"activityId": 1, "startTimeLocal": "2020-01-01T12:00:00", "privateExample": "synthetic-private-value"}])
+        output, errors = io.StringIO(), io.StringIO()
+        with patch.dict(os.environ, {"SYNTHETIC_NETWORK_KEY": placeholder}), patch("garmin_pull.request.build_opener", side_effect=[exchange_transport, read_transport]), redirect_stdout(output), redirect_stderr(errors):
+            code = g.main(["--key-env", "SYNTHETIC_NETWORK_KEY", "--approved-key-exchange", "--approved-token-use", "--metadata-only", "activities", "--start-date", "2020-01-01", "--end-date", "2020-01-01", "--page-size", "1", "--max-pages", "1"])
+            self.assertNotIn("SYNTHETIC_NETWORK_KEY", os.environ)
+        self.assertEqual(code, 0)
+        result = json.loads(output.getvalue())
+        self.assertEqual(result["record_count"], 1)
+        self.assertFalse(result["complete"])
+        self.assertFalse(result["persisted"])
+        self.assertEqual(errors.getvalue(), "")
+        for private_value in (placeholder, SYNTHETIC_TOKEN, "synthetic-private-value"):
+            self.assertNotIn(private_value, output.getvalue())
+        self.assertEqual(exchange_transport.open.call_args.args[0].get_header("Authorization"), "ApiKey " + placeholder)
+        self.assertEqual(read_transport.open.call_args.args[0].get_header("Authorization"), "Bearer " + SYNTHETIC_TOKEN)
+
     def test_documented_activity_route(self):
         path, params = g.resource_request(activity_args())
         self.assertEqual(path, "/activitylist-service/activities/search/activities")

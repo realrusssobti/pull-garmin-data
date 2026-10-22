@@ -1,29 +1,31 @@
 ---
 name: pull-garmin-data
-description: Pull the user's own Garmin Connect activity and health data through the official Personal API. Use for Garmin workouts, daily summaries, sleep, heart rate, HRV, and original activity files. Includes a bounded read-only Python client with authorized in-memory API-key exchange or an existing securely supplied OAuth bearer token. Require applicable runtime credential authorization; do not confuse installation with a live connection or ChatGPT Health integration.
+description: Pull the user's own Garmin Connect activity and health data through the official Personal API. Use for Garmin workouts, daily summaries, sleep, heart rate, HRV, and original activity files. Supports a bounded Python client in an approved cloud environment with Personal Vault network secrets, or an authenticated Garmin MCP plugin. Verify runtime access and scope; installation is not account connection or ChatGPT Health integration.
 ---
 
 # Pull Garmin Data
 
 Retrieve only the user's requested Garmin data, on demand. Use the official Personal API, not Garmin Connect scraping or unofficial login libraries.
 
-## Check credential intake before promising a connection
+## Choose a supported runtime before authentication
 
-Treat this skill as reusable code and instructions, not a connector, secure entry form, credential vault, OAuth sign-in screen, or persistent account session. A successful test in one conversation does not provision credentials in another conversation or execution environment.
+This skill provides workflow instructions and a client, not a global account session. Read [web-workflow.md](references/web-workflow.md) for Garmin key creation and web setup. Do not mistake a successful test in another conversation for access here.
 
-Before giving credential setup instructions, verify an actual supported route in the current environment:
+1. Prefer a connected eligible Garmin MCP plugin when present; inspect its actual schemas and connection state. Do not invent tool names, a server URL, or an OAuth screen.
+2. Without a plugin, ChatGPT Web can use the documented **Work in > Cloud** route when the account has a saved Codex Cloud environment and Personal Vault. Verify this actual runtime, the requested network-secret key, and its allowed destination. A general Work computer, this assistant's filesystem, or the skill installation alone is not that setup.
+3. If the environment is missing, follow the conditional setup guide. Ask only for the exact missing permission or UI action. Never tell the user to provision an inaccessible sandbox variable, paste a credential into chat, or use a nonexistent secure field.
+4. In the configured cloud task, use `--key-env GARMIN_PERSONAL_API_KEY` after applicable approval. Preserve the provided network-secret placeholder verbatim; the platform proxy supplies the actual key to the allowed Garmin host. Do not inspect, print, transform, persist, or attempt to resolve the placeholder. Keep the configured HTTPS proxy and TLS verification enabled. The returned Garmin access token is sensitive and remains process-memory only.
+5. Test one requested activity-local day, at most one record and one page, with metadata-only output. Repeat in a new task using the same published environment before claiming reusable setup. A full one-record page may be incomplete. Mock tests cannot establish real proxy substitution or account availability.
 
-- Use an already-connected eligible Garmin plugin if its own authorization flow and requested read are available.
-- Use a key/token already provisioned into the selected runtime through a user-authorized secret mechanism, without exposing it in chat, tool arguments, command history, or logs. The environment-variable and stdin options below consume such input; they do not create a secure intake channel.
-- A user-run local terminal program can obtain a secret directly from the user with a hidden-input function and call this helper in the same process. Offer local execution only when requested and the user has the script and a real terminal. Hidden terminal echo alone does not make assistant tool-input logging safe.
+Creating an environment, configuring network access or secrets, creating OAuth grants, and expanding persistent access require applicable authorization. No key/token belongs in chat, assistant tool arguments, URLs, source files, Git, or logs. A browser login alone does not authorize API reads. Do not require a Mac, desktop app, local tunnel, or Keychain for the cloud route. Do not silently substitute local execution when the user wants Web.
 
-If none of these routes exists, state the blocker plainly: “The Garmin skill is installed, but this chat has no supported secure way to receive your Garmin credential. It is not signed in here.” Offer only a verified available connector/setup route, or a user-run local workflow if desired. Do not invent a secure field, ask for a key in chat, send it through an assistant's terminal-input tool, paste it into tool arguments, hardcode it, save it in the skill, or repurpose unrelated hosting configuration as a credential vault. Do not claim a browser login automatically provides API access.
+The client also supports separately approved backends or runtimes with an actual protected secret-input mechanism. Its environment-variable/stdin flags only consume input; they do not create a secure entry UI. A network-secret placeholder is not a raw secret variable: use the platform's Network secret type and the documented environment requirements, not a plaintext file pretending to be a keychain.
 
 ## Establish scope and access
 
 1. Resolve data categories, date range, and time zone from the conversation. Ask only when missing details materially change the pull. Do not collect unrelated metrics or full history by default.
 2. Read [api-reference.md](references/api-reference.md) for verified official endpoints, supported commands, date semantics, and authentication limitations. Recheck official documentation if Garmin changes its contract.
-3. Prefer an eligible connected Garmin plugin when it supports the task. Otherwise use the bundled client with an existing access token, or separately authorize an in-memory Personal API key exchange, using an approved runtime secret mechanism.
+3. Prefer an eligible connected Garmin plugin when it supports the task. Otherwise use the bundled client in the configured cloud environment or another explicitly suitable approved runtime. If neither is available, follow the missing-setup workflow rather than asking the user to set a sandbox variable.
 4. Obtain applicable user authorization before transmitting credentials, generating tokens, or configuring persistent access. Creating or invoking this skill does not grant that authority. Never ask the user to paste a key, token, or password in chat.
 5. Keep Personal API keys distinct from resource access tokens. If a key is supplied, obtain applicable approval for sending it to Garmin and creating an access token before invoking the exchange option. The helper makes one fixed-origin POST, accepts the observed plain-text token response, and then performs only the requested GET reads. Never display or save a credential or the exchange response. Do not automatically retry an exchange with an uncertain outcome.
 
