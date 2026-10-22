@@ -39,13 +39,17 @@ This route uses a **saved Codex Cloud environment**, selected through **Work in 
 1. In a new web task, choose **Work in > Cloud > Select environment > Create environment**.
 2. Select this GitHub repository; connect GitHub if prompted. During setup, ask it to use Python 3.9 or newer, read the repository's `SKILL.md`, and run the offline tests. No Garmin credentials or live requests are needed for those tests.
 3. Keep **Privacy > Who can use** set to **Only me**.
-4. In the setup conversation, ask: “Request a personal Network secret named GARMIN_PERSONAL_API_KEY, restricted to personal.connectapi.garmin.com. Do not store its value as an environment-owned secret or in files. Do not call Garmin during setup.” Review **Network secrets > Manage** and the restricted network policy to confirm the requested key and exact allowed host. If setup cannot create a personal requirement, stop and resolve that missing capability before entering a key.
-5. In **Settings > Codex Cloud > Personal vault**, select **Add**, choose **Network secret**, and enter the matching key name and your Garmin key directly in that private UI. Under **Applies to**, choose **Selected environments** and only this Garmin environment. The platform may instead prompt for the requested personal value during setup.
+4. In the setup conversation, ask: “Request a personal Environment variable named GARMIN_API_KEY. Allow HTTPS access only to personal.connectapi.garmin.com for Garmin requests. Do not copy its value to environment-owned storage or files, and do not call Garmin during setup.” Review **Environment variables > Manage** and the restricted network policy. If your existing vault value is a **Network secret**, request that type instead and review **Network secrets > Manage**. Stop if setup cannot request a personal value.
+5. If the value is already saved in **Settings > Codex Cloud > Personal vault**, reuse it with the same name and type. Otherwise select **Add**, choose the matching type (**Environment variable** for the setup prompt above), and enter your Garmin key directly in that private UI. For new entries, prefer **Applies to > Selected environments** and this Garmin environment only. An existing **All environments** entry works where an environment requests it; do not duplicate it merely for setup. The platform may instead prompt for the personal value during setup.
 6. Review and publish the environment, then start a new task in it.
 
-The environment must request the key. A Personal Vault entry alone is not enough, and personal secrets do not automatically allow network access. Do not use **Environment variable** when **Network secret** is suitable: a direct variable exposes the actual value to the program, whereas a network secret supplies a placeholder. See the official [cloud-environment and Personal Vault guide](https://learn.chatgpt.com/docs/environments/cloud-environments).
+The environment must request the key **with the matching type**. A Personal Vault entry alone is not enough, and personal values do not automatically allow network access. Only requested values reach a task. See the official [cloud-environment and Personal Vault guide](https://learn.chatgpt.com/docs/environments/cloud-environments).
 
-The client sends the unchanged placeholder in the Authorization header through the managed HTTPS proxy. The proxy substitutes the real key only for the allowed destination on port 443. The client does not need the raw key, but Garmin's returned short-lived token still enters process memory. Do not disable the proxy, transform the placeholder, or save the token. This is the intended integration based on the documented mechanisms; synthetic regression tests do not prove real platform substitution.
+**Environment variable:** the actual key is available to the client process. The helper removes it from its own process environment after reading and does not print or save it. This does not erase the parent environment or the saved vault entry. Keep credentials out of environment dumps, files, logs, and source code.
+
+**Network secret, optional:** this lower-exposure mode supplies a placeholder instead of the raw key. It requires a matching network-secret request and the allowed Garmin destination. The client preserves the placeholder in the Authorization header and uses the managed HTTPS proxy, which substitutes the key for allowed requests on port 443. Do not disable the proxy or transform the placeholder. Switching an existing value to this type is a separate configuration choice, not required by the client. Actual platform substitution still needs an authorized test.
+
+Both modes return a short-lived Garmin token into process memory. Never save or print it. No account-specific vault or live-cloud verification is performed by these offline tests.
 
 ### First bounded pull
 
@@ -63,7 +67,7 @@ No real account, vault, or new-environment test is performed by installing this 
 
 An eligible authenticated Garmin MCP plugin is another route. Its service must already be deployed and trusted; this repository does not deploy one. Open [ChatGPT Plugins](https://chatgpt.com/plugins), choose **+ → Add custom MCP server**, supply the verified HTTPS URL, configure **OAuth**, create/install it, then test from a new Work chat. Never use a guessed URL or anonymous access for private Garmin data. Follow the [OpenAI Web quickstart](https://developers.openai.com/plugins/quickstart).
 
-MCP authentication uses OAuth rather than an arbitrary Garmin API-key field. This limitation applies to MCP connections, not to the cloud network-secret workflow above. Building a new hosted service requires separate hosting, storage, and access authorization; it is not required if the supported cloud route works for your account.
+MCP authentication uses OAuth rather than an arbitrary Garmin API-key field. This limitation applies to MCP connections, not to the cloud Personal Vault workflow above. Building a new hosted service requires separate hosting, storage, and access authorization; it is not required if the supported cloud route works for your account.
 
 ## Skill installation
 
@@ -73,15 +77,15 @@ For a saved cloud environment, load the repository’s `SKILL.md` explicitly dur
 
 ## Backend/client reference
 
-The Python 3.9+ client uses only the standard library. It accepts an existing access token or Personal API key through an already-provisioned runtime environment variable or protected stdin, never a credential value in command-line arguments. These input options consume the configured cloud placeholder or other approved runtime input; the Personal Vault UI is the setup surface, not a CLI flag.
+The Python 3.9+ client uses only the standard library. It accepts an existing access token or Personal API key through an already-provisioned runtime environment variable or protected stdin, never a credential value in command-line arguments. These input options consume the configured direct variable, network-secret placeholder, or other approved runtime input; the Personal Vault UI is the setup surface, not a CLI flag.
 
 After a real runtime secret mechanism and the necessary approvals exist, a bounded metadata-only request is:
 
 ```sh
-python3 scripts/garmin_pull.py --key-env GARMIN_PERSONAL_API_KEY --approved-key-exchange --approved-token-use --metadata-only activities --start-date 2020-01-01 --end-date 2020-01-01 --page-size 1 --max-pages 1
+python3 scripts/garmin_pull.py --key-env GARMIN_API_KEY --approved-key-exchange --approved-token-use --metadata-only activities --start-date 2020-01-01 --end-date 2020-01-01 --page-size 1 --max-pages 1
 ```
 
-The date is synthetic. The flags do not grant permission. Key exchange sends one request to Garmin and does not retry uncertain outcomes. Returned tokens stay in process memory; metadata-only reads do not print or save health records. For existing tokens, use `--token-env GARMIN_ACCESS_TOKEN --approved-token-use` instead of the key options. Full command details and endpoint/date semantics are in [SKILL.md](SKILL.md) and [the API reference](references/api-reference.md).
+The canonical key name is `GARMIN_API_KEY`. Existing setups with another approved variable name remain supported: use `--key-env NAME` with that exact name instead of moving or duplicating the secret. The date is synthetic. The flags do not grant permission. Key exchange sends one request to Garmin and does not retry uncertain outcomes. Returned tokens stay in process memory; metadata-only reads do not print or save health records. For existing tokens, use `--token-env GARMIN_ACCESS_TOKEN --approved-token-use` instead of the key options. Full command details and endpoint/date semantics are in [SKILL.md](SKILL.md) and [the API reference](references/api-reference.md).
 
 Run the offline tests without any Garmin credential:
 

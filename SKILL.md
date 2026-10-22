@@ -1,6 +1,6 @@
 ---
 name: pull-garmin-data
-description: Pull the user's own Garmin Connect activity and health data through the official Personal API. Use for Garmin workouts, daily summaries, sleep, heart rate, HRV, and original activity files. Supports a bounded Python client in an approved cloud environment with Personal Vault network secrets, or an authenticated Garmin MCP plugin. Verify runtime access and scope; installation is not account connection or ChatGPT Health integration.
+description: Pull the user's own Garmin Connect activity and health data through the official Personal API. Use for Garmin workouts, daily summaries, sleep, heart rate, HRV, and original activity files. Supports a bounded Python client in an approved cloud environment with Personal Vault credentials, or an authenticated Garmin MCP plugin. Verify runtime access and scope; installation is not account connection or ChatGPT Health integration.
 ---
 
 # Pull Garmin Data
@@ -12,14 +12,14 @@ Retrieve only the user's requested Garmin data, on demand. Use the official Pers
 This skill provides workflow instructions and a client, not a global account session. Read [web-workflow.md](references/web-workflow.md) for Garmin key creation and web setup. Do not mistake a successful test in another conversation for access here.
 
 1. Prefer a connected eligible Garmin MCP plugin when present; inspect its actual schemas and connection state. Do not invent tool names, a server URL, or an OAuth screen.
-2. Without a plugin, ChatGPT Web can use the documented **Work in > Cloud** route when the account has a saved Codex Cloud environment and Personal Vault. Verify this actual runtime, the requested network-secret key, and its allowed destination. A general Work computer, this assistant's filesystem, or the skill installation alone is not that setup.
+2. Without a plugin, ChatGPT Web can use the documented **Work in > Cloud** route when the account has a saved Codex Cloud environment and Personal Vault. Verify this actual runtime, the requested personal key and matching value type, and the allowed Garmin destination. A general Work computer, this assistant's filesystem, or the skill installation alone is not that setup.
 3. If the environment is missing, follow the conditional setup guide. Ask only for the exact missing permission or UI action. Never tell the user to provision an inaccessible sandbox variable, paste a credential into chat, or use a nonexistent secure field.
-4. In the configured cloud task, use `--key-env GARMIN_PERSONAL_API_KEY` after applicable approval. Preserve the provided network-secret placeholder verbatim; the platform proxy supplies the actual key to the allowed Garmin host. Do not inspect, print, transform, persist, or attempt to resolve the placeholder. Keep the configured HTTPS proxy and TLS verification enabled. The returned Garmin access token is sensitive and remains process-memory only.
+4. In the configured cloud task, use `--key-env GARMIN_API_KEY` after applicable approval. Match the environment request to the existing Personal Vault type using configuration information, not by printing its value. An **Environment variable** supplies the raw key to the client process; keep it only in memory and never print or persist it. A **Network secret** supplies a placeholder; preserve it unchanged and let the platform proxy substitute the key for the allowed host. Keep the configured HTTPS proxy and TLS verification enabled. The returned Garmin access token is sensitive in either mode and remains process-memory only.
 5. Test one requested activity-local day, at most one record and one page, with metadata-only output. Repeat in a new task using the same published environment before claiming reusable setup. A full one-record page may be incomplete. Mock tests cannot establish real proxy substitution or account availability.
 
 Creating an environment, configuring network access or secrets, creating OAuth grants, and expanding persistent access require applicable authorization. No key/token belongs in chat, assistant tool arguments, URLs, source files, Git, or logs. A browser login alone does not authorize API reads. Do not require a Mac, desktop app, local tunnel, or Keychain for the cloud route. Do not silently substitute local execution when the user wants Web.
 
-The client also supports separately approved backends or runtimes with an actual protected secret-input mechanism. Its environment-variable/stdin flags only consume input; they do not create a secure entry UI. A network-secret placeholder is not a raw secret variable: use the platform's Network secret type and the documented environment requirements, not a plaintext file pretending to be a keychain.
+The client also supports separately approved backends or runtimes with an actual protected secret-input mechanism. Its environment-variable/stdin flags only consume input; they do not create a secure entry UI. Both Personal Vault types are supported. Network secrets reduce raw-key exposure when available, but do not silently convert or duplicate an existing Environment variable or require the user to recreate it. Match the requested type and name; never use a plaintext file pretending to be a keychain.
 
 ## Establish scope and access
 
@@ -44,10 +44,10 @@ These example dates are synthetic. Replace them with the user's requested period
 If the user instead authorizes a Personal API key exchange and the subsequent token use, use an already-provisioned secret environment variable:
 
 ```bash
-python3 scripts/garmin_pull.py --key-env GARMIN_PERSONAL_API_KEY --approved-key-exchange --approved-token-use --metadata-only activities --start-date 2020-01-01 --end-date 2020-01-01 --page-size 1 --max-pages 1
+python3 scripts/garmin_pull.py --key-env GARMIN_API_KEY --approved-key-exchange --approved-token-use --metadata-only activities --start-date 2020-01-01 --end-date 2020-01-01 --page-size 1 --max-pages 1
 ```
 
-Use `--key-stdin` only with protected input. The helper does not create a Personal API key, accept terms, store credentials, refresh tokens, or establish a standing connection. Each invocation using a key creates a new access token, so prefer an existing valid token within its authorized scope. Both approval flags require actual applicable approval; neither grants it.
+The canonical vault key name is `GARMIN_API_KEY`. If an approved secret already uses another name, pass that exact name to `--key-env NAME`; do not copy or re-save the credential merely to match the example. Use `--key-stdin` only with protected input. The helper does not create a Personal API key, accept terms, store credentials, refresh tokens, or establish a standing connection. Each invocation using a key creates a new access token, so prefer an existing valid token within its authorized scope. Both approval flags require actual applicable approval; neither grants it.
 
 For an approved in-process workflow, import the module with bytecode writing disabled, call `exchange_api_key(key, approved=True)` only when exchange is authorized, then `Client(token)` and `collect(client, args)`. Keep returned records private and print only the selected non-sensitive metadata. Catch unexpected exceptions without printing their values or a traceback. Releasing Python references does not guarantee secure memory erasure.
 

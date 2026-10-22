@@ -14,7 +14,7 @@ The parent Personal page is a JavaScript redirect to the guide. Swagger embeds i
 
 ## Credential-input limitations
 
-For ChatGPT Web, use a configured Codex Cloud environment with a requested Personal Vault network secret, or an eligible authenticated MCP plugin, as described in [web-workflow.md](web-workflow.md). The helper consumes the runtime-provided value or protected stdin; these flags are not themselves a secure entry UI. A network-secret placeholder passes unchanged into the fixed-origin Authorization header and the default HTTPS proxy handles substitution. The actual Garmin token response still enters process memory. Ordinary chat text, command arguments, assistant terminal-input calls, and source files are not credential intake. Do not substitute local execution or an inaccessible sandbox variable for the Web workflow.
+For ChatGPT Web, use a configured Codex Cloud environment with a requested Personal Vault Environment variable or Network secret, or an eligible authenticated MCP plugin, as described in [web-workflow.md](web-workflow.md). The helper consumes the runtime-provided value or protected stdin; these flags are not themselves a secure entry UI. A direct Environment variable puts the raw key in the client process; never print or persist it. Alternatively, a network-secret placeholder passes unchanged into the fixed-origin Authorization header and the default HTTPS proxy handles substitution. The actual Garmin token response still enters process memory. Ordinary chat text, command arguments, assistant terminal-input calls, and source files are not credential intake. Do not substitute local execution or an inaccessible sandbox variable for the Web workflow.
 
 ## Authentication and approval boundaries
 
