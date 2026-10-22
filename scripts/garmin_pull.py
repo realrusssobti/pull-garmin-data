@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded Garmin Personal API reads; optional approved in-memory key exchange."""
+"""Bounded Garmin Personal API reads and in-memory key exchange."""
 import argparse
 import datetime as dt
 import json
@@ -36,7 +36,7 @@ class NoRedirect(request.HTTPRedirectHandler):
 
 def clean_token(value):
     if not isinstance(value, str) or not value or len(value) > MAX_TOKEN:
-        raise PullError("An access token is required through the approved runtime input.")
+        raise PullError("An access token is required through an environment variable or stdin.")
     if not re.fullmatch(r"[A-Za-z0-9\-._~+/]+=*", value):
         raise PullError("Access token input is not a valid OAuth bearer token.")
     return value
@@ -61,7 +61,7 @@ def read_token(args):
 
 def clean_api_key(value):
     if not isinstance(value, str) or not value or len(value) > MAX_TOKEN:
-        raise PullError("A Personal API key is required through approved runtime input.")
+        raise PullError("A Personal API key is required through an environment variable or stdin.")
     if any(ord(char) < 33 or ord(char) > 126 for char in value):
         raise PullError("API key contains unsupported header characters.")
     return value
@@ -70,7 +70,7 @@ def clean_api_key(value):
 def exchange_api_key(api_key, *, approved=False, opener=None):
     """Exchange once, without retries, files, logs, or token-response guessing."""
     if approved is not True:
-        raise PullError("Obtain applicable approval before sending an API key and creating an access token.")
+        raise PullError("Set approved=True to enable key exchange.")
     api_key = clean_api_key(api_key)
     req = request.Request(ORIGIN + TOKEN_PATH, method="POST", data=b"", headers={
         "Authorization": "ApiKey " + api_key,
@@ -265,7 +265,8 @@ def collect(client, args):
     }
 
 
-def private_output(path, data, binary=False):
+def private_destination(path):
+    """Validate a fresh output path and create its private parent if needed."""
     dest = Path(path).expanduser()
     if not dest.is_absolute():
         raise PullError("Use an absolute private output path outside source-control repositories.")
@@ -283,12 +284,17 @@ def private_output(path, data, binary=False):
     mode = parent.stat()
     if mode.st_uid != os.getuid() or stat.S_IMODE(mode.st_mode) & 0o077:
         raise PullError("Output directory must be owned by you and private (mode 0700).")
+    return parent / dest.name
+
+
+def private_output(path, data, binary=False):
+    dest = private_destination(path)
     payload = data if binary else (json.dumps(data, ensure_ascii=False, indent=2) + "\n").encode()
     if binary and not isinstance(payload, bytes):
         raise PullError("No activity file was returned; nothing saved.")
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
     try:
-        fd = os.open(str(parent / dest.name), flags, 0o600)
+        fd = os.open(str(dest), flags, 0o600)
         with os.fdopen(fd, "wb") as handle:
             handle.write(payload)
     except OSError:
@@ -310,12 +316,12 @@ def positive_bound(low, high):
 def parser():
     p = SafeArgumentParser(description=__doc__)
     auth = p.add_mutually_exclusive_group(required=True)
-    auth.add_argument("--token-stdin", action="store_true", help="Read an existing access token from protected stdin, never an API key.")
-    auth.add_argument("--token-env", metavar="NAME", help="Read an existing access token from an authorized runtime environment variable.")
-    auth.add_argument("--key-stdin", action="store_true", help="Read a Personal API key from protected stdin for one separately approved exchange.")
-    auth.add_argument("--key-env", metavar="NAME", help="Read a Personal API key from an authorized runtime environment variable.")
-    p.add_argument("--approved-token-use", action="store_true", help="Required acknowledgement of applicable user approval, not a substitute for obtaining it.")
-    p.add_argument("--approved-key-exchange", action="store_true", help="Required with a Personal API key after actual approval to transmit it and generate a token.")
+    auth.add_argument("--token-stdin", action="store_true", help="Read an existing access token from stdin.")
+    auth.add_argument("--token-env", metavar="NAME", help="Read an existing access token from a named environment variable.")
+    auth.add_argument("--key-stdin", action="store_true", help="Read a Personal API key from stdin for one token exchange.")
+    auth.add_argument("--key-env", metavar="NAME", help="Read a Personal API key from a named environment variable.")
+    p.add_argument("--approved-token-use", action="store_true", help="Enable authenticated resource reads.")
+    p.add_argument("--approved-key-exchange", action="store_true", help="Enable one Personal API key exchange.")
     out = p.add_mutually_exclusive_group(required=True)
     out.add_argument("--output", help="Fresh file in a private directory outside all repositories.")
     out.add_argument("--metadata-only", action="store_true", help="Discard response data after reporting counts and status, with no raw output.")
@@ -343,10 +349,10 @@ def main(argv=None):
     try:
         args = parser().parse_args(argv)
         if not args.approved_token_use:
-            raise PullError("Obtain applicable user approval before transmitting a secret access token.")
+            raise PullError("Use --approved-token-use to enable authenticated reads.")
         using_key = args.key_stdin or args.key_env is not None
         if using_key and not args.approved_key_exchange:
-            raise PullError("Obtain applicable approval before API-key transmission and token generation.")
+            raise PullError("Use --approved-key-exchange with a Personal API key.")
         resource_request(args)  # Validate scope before touching credentials or network.
         if using_key:
             key = clean_api_key(read_secret(args.key_stdin, args.key_env))

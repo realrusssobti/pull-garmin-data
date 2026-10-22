@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>{{TITLE}} · {{PERIOD}}</title>
+    <style>
+      :root {
+        --ink: #142e39;
+        --muted: #526a73;
+        --paper: #f5f4ee;
+        --blue: #265cd4;
+        --teal: #158678;
+        --amber: #a56816;
+        --line: #d8e1df;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font:
+          16px/1.65 system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+      main {
+        max-width: 1180px;
+        margin: auto;
+        padding: 44px 32px 70px;
+      }
+      a {
+        color: var(--blue);
+        text-underline-offset: 3px;
+      }
+      header {
+        padding: 36px 0 40px;
+        border-bottom: 1px solid var(--line);
+      }
+      .eyebrow {
+        font-size: 12px;
+        font-weight: 750;
+        letter-spacing: 0.17em;
+        text-transform: uppercase;
+        color: var(--teal);
+      }
+      h1 {
+        font-size: clamp(36px, 5vw, 66px);
+        font-weight: 650;
+        line-height: 1.08;
+        letter-spacing: -0.05em;
+        max-width: 900px;
+        margin: 20px 0;
+      }
+      h2 {
+        font-size: 28px;
+        font-weight: 650;
+        letter-spacing: -0.025em;
+        margin: 0 0 18px;
+      }
+      h3 {
+        font-size: 18px;
+        margin: 26px 0 12px;
+      }
+      p {
+        margin: 0 0 16px;
+      }
+      .period {
+        font-size: 22px;
+        font-weight: 600;
+      }
+      .muted,
+      .sub,
+      .note {
+        color: var(--muted);
+      }
+      .sub {
+        margin: 8px 0 24px;
+        font-size: 14px;
+      }
+      nav,
+      .tools {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      nav a {
+        font-size: 14px;
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+        border: 1px solid #b6c6c7;
+        border-radius: 8px;
+        background: white;
+        color: var(--ink);
+        padding: 9px 13px;
+      }
+      button {
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 650;
+      }
+      button:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+      }
+      :focus-visible {
+        outline: 3px solid var(--blue);
+        outline-offset: 4px;
+      }
+      .tools {
+        margin: 22px 0;
+      }
+      .tools input {
+        min-width: 160px;
+        flex: 1;
+      }
+      .tools select {
+        max-width: 100%;
+      }
+      .summary {
+        margin: 30px 0 36px;
+        background: var(--ink);
+        color: #fff;
+        border-radius: 16px;
+        padding: 30px;
+      }
+      .summary h2 {
+        font-size: 15px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: #8de3c6;
+      }
+      .summary ol {
+        margin: 0;
+        padding-left: 24px;
+      }
+      .summary li {
+        padding: 8px 0 8px 8px;
+      }
+      .summary li + li {
+        border-top: 1px solid #3f5660;
+        margin-top: 12px;
+        padding-top: 20px;
+      }
+      section {
+        margin-top: 46px;
+        scroll-margin-top: 24px;
+      }
+      .section-number {
+        color: var(--teal);
+        font-size: 12px;
+        font-weight: 750;
+        letter-spacing: 0.12em;
+        display: block;
+        margin-bottom: 8px;
+      }
+      .chart-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      .chart {
+        background: white;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        padding: 20px 18px 16px;
+        margin: 0;
+        min-width: 0;
+      }
+      .chart figcaption {
+        font-weight: 650;
+        font-size: 17px;
+        margin-bottom: 8px;
+      }
+      .chart svg {
+        width: 100%;
+        height: auto;
+        display: block;
+        overflow: visible;
+      }
+      .chart text {
+        font: 11px system-ui;
+        fill: var(--muted);
+      }
+      .grid {
+        stroke: #e5eceb;
+        stroke-width: 1;
+      }
+      .reference-label {
+        paint-order: stroke;
+        stroke: white;
+        stroke-width: 4;
+        stroke-linejoin: round;
+      }
+      .reference {
+        stroke: var(--amber);
+        stroke-dasharray: 5 5;
+      }
+      .chart polyline {
+        pointer-events: none;
+      }
+      .chart [data-tip]:hover,
+      .chart [data-tip]:focus {
+        filter: brightness(0.8);
+        stroke: var(--ink);
+        stroke-width: 2;
+      }
+      .legend {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        font-size: 12px;
+        color: var(--muted);
+        padding-left: 12px;
+      }
+      .legend i {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 7px;
+      }
+      .empty {
+        padding: 70px 0;
+        text-align: center;
+        color: var(--muted);
+      }
+      .table-scroll {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: white;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+      }
+      th,
+      td {
+        text-align: right;
+        padding: 13px 16px;
+        border-bottom: 1px solid #e6ecea;
+        white-space: nowrap;
+      }
+      th:first-child,
+      td:first-child {
+        text-align: left;
+      }
+      th {
+        background: #eaf0ed;
+        color: #3e5860;
+        font-size: 11px;
+        letter-spacing: 0.025em;
+      }
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+      tbody tr:hover {
+        background: #f4f8f7;
+      }
+      #sessions td:nth-child(2),
+      #sessions td:last-child {
+        text-align: left;
+      }
+      .note {
+        font-size: 13px;
+        margin: 12px 0;
+      }
+      .notice {
+        background: #fff7e8;
+        border-left: 4px solid var(--amber);
+        padding: 20px 24px;
+        margin: 24px 0;
+        border-radius: 0 10px 10px 0;
+      }
+      .notice h2 {
+        font-size: 17px;
+        margin: 0;
+      }
+      .notice ul {
+        margin: 8px 0 0;
+        padding-left: 20px;
+        font-size: 14px;
+      }
+      .actions {
+        padding: 24px 30px;
+        background: #e5efe9;
+        border-radius: 14px;
+      }
+      .actions ol {
+        padding-left: 22px;
+        margin-bottom: 0;
+      }
+      .actions li {
+        padding: 7px 0 7px 7px;
+      }
+      .method {
+        font-size: 14px;
+        color: var(--muted);
+      }
+      details {
+        border-top: 1px solid var(--line);
+        padding: 18px 0;
+        margin-top: 20px;
+      }
+      summary {
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 650;
+        color: var(--ink);
+      }
+      details > div {
+        margin-top: 18px;
+      }
+      .demo-label {
+        background: #d9e8ff;
+        color: #193f8d;
+        border-radius: 7px;
+        padding: 9px 13px;
+        font-size: 13px;
+        font-weight: 650;
+        margin-bottom: 12px;
+      }
+      footer {
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+        font-size: 12px;
+        color: var(--muted);
+      }
+      #tooltip {
+        position: fixed;
+        background: var(--ink);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        max-width: 280px;
+        z-index: 5;
+        pointer-events: none;
+        box-shadow: 0 4px 18px #0002;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      @media (max-width: 700px) {
+        main {
+          padding: 20px 16px 40px;
+        }
+        header {
+          padding-top: 20px;
+        }
+        h1 {
+          font-size: 40px;
+        }
+        .period {
+          font-size: 17px;
+        }
+        .chart-grid {
+          grid-template-columns: 1fr;
+        }
+        .summary {
+          padding: 23px 20px;
+        }
+        .summary li {
+          padding-left: 2px;
+        }
+        h2 {
+          font-size: 25px;
+        }
+        .tools {
+          gap: 8px;
+        }
+        .tools label {
+          width: 100%;
+        }
+        th,
+        td {
+          padding: 11px 12px;
+        }
+        .actions {
+          padding: 22px;
+        }
+      }
+      @media print {
+        body {
+          background: white;
+          font-size: 11px;
+        }
+        main {
+          max-width: none;
+          padding: 0;
+        }
+        header {
+          padding: 0 0 16px;
+        }
+        h1 {
+          font-size: 34px;
+        }
+        h2 {
+          font-size: 22px;
+        }
+        .summary {
+          background: #edf3ef;
+          color: var(--ink);
+          padding: 20px;
+        }
+        .summary h2 {
+          color: var(--teal);
+        }
+        .summary li + li {
+          border-color: var(--line);
+        }
+        .chart-grid {
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+        .chart {
+          break-inside: avoid;
+          padding: 12px;
+        }
+        .chart figcaption {
+          font-size: 14px;
+        }
+        section {
+          margin-top: 24px;
+        }
+        .tools,
+        nav,
+        .no-print,
+        #tooltip {
+          display: none !important;
+        }
+        .table-scroll {
+          overflow: visible;
+        }
+        th,
+        td {
+          font-size: 9px;
+          padding: 7px;
+          white-space: normal;
+        }
+        tr {
+          break-inside: avoid;
+        }
+        .notice,
+        .actions {
+          break-inside: avoid;
+        }
+        a {
+          color: inherit;
+        }
+        details {
+          display: block;
+        }
+        footer {
+          font-size: 9px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      {{DEMO}}
+      <header>
+        <div class="eyebrow">Personal performance / Garmin Connect</div>
+        <h1>{{TITLE}}</h1>
+        <div class="period">{{PERIOD}}</div>
+        <p class="sub">{{SUBTITLE}}</p>
+        <nav aria-label="Report sections">
+          <a href="#comparison">Period comparison</a
+          ><a href="#trends">Daily trends</a><a href="#training">Training</a
+          ><a href="#log">Activity log</a><a href="#methods">Methods</a>
+        </nav>
+        <div class="tools no-print" id="exports" hidden>
+          <button id="print" type="button">Print / save PDF</button
+          ><button id="json" type="button">Download report data</button
+          ><button id="csv" type="button">Export activities CSV</button>
+        </div>
+      </header>
+      <div class="summary">
+        <h2>The readout</h2>
+        <ol>
+          {{SUMMARY}}
+        </ol>
+      </div>
+      {{WARNINGS}}
+      <section id="comparison">
+        <span class="section-number">01 / Compare</span>
+        <h2>How the two periods compare</h2>
+        {{COMPARISON}}
+        <p class="note">
+          Daily measures are averages of available readings. Exercise-load sum
+          adds each recorded activity’s load; Garmin’s weighted acute load and
+          training status are separate measures. A dash means unavailable or an
+          undefined percentage from zero.
+        </p>
+      </section>
+      <section id="trends">
+        <span class="section-number">02 / Observe</span>
+        <h2>The daily picture</h2>
+        <p class="muted">
+          Explore individual readings by hovering or focusing a chart point.
+          Missing measurements appear as gaps.
+        </p>
+        <div class="chart-grid">{{CHARTS}}</div>
+        <p class="note">
+          Resting heart rate and HRV charts use a cropped vertical scale to show
+          variation. Sleep excludes naps. Body Battery and sleep/stress scores
+          use Garmin’s reported scale.
+        </p>
+      </section>
+      <section id="training">
+        <span class="section-number">03 / Train</span>
+        <h2>Training mix & progression</h2>
+        <p>{{TRAINING}}</p>
+        {{SPORTS}}
+        <h3>Outdoor running detail</h3>
+        {{RUNS}}
+      </section>
+      <section class="actions">
+        <span class="section-number">04 / Next</span>
+        <h2>What to carry forward</h2>
+        <ol>
+          {{ACTIONS}}
+        </ol>
+      </section>
+      <section id="log">
+        <span class="section-number">05 / Review</span>
+        <h2>Activity log</h2>
+        <div class="tools no-print" id="filters" hidden>
+          <label for="search" class="sr-only">Search activities</label
+          ><input
+            id="search"
+            type="search"
+            placeholder="Search date, activity or benefit…"
+          /><label for="sport" class="sr-only">Activity type</label
+          ><select id="sport">
+            <option value="">All activity types</option></select
+          ><button id="reset" type="button">Reset</button>
+        </div>
+        <p id="count" class="note" aria-live="polite"></p>
+        {{SESSIONS}}
+      </section>
+      <section id="methods" class="method">
+        <span class="section-number">06 / Reference</span>
+        <h2>Coverage & methods</h2>
+        <p>{{COVERAGE}}.</p>
+        <p>
+          The requested window is split into equal calendar periods. Activities
+          use their local start date; daily readings use Garmin’s calendar date.
+          Training totals require a complete, dated activity search. Missing
+          values remain missing; a day with no workouts is zero only when the
+          activity search is complete. Daily comparisons require readings for
+          every day in both periods.
+        </p>
+        <p>
+          Outdoor pace is total recorded running time divided by total distance.
+          Treadmill sessions are excluded from outdoor comparisons. The distance
+          check flags running records under 100 m over at least 10 minutes. This
+          period comparison describes recent workload and recovery observations;
+          fitness progression needs comparable efforts over a longer period.
+        </p>
+        <p>
+          The seven-hour sleep line uses
+          <a href="https://www.cdc.gov/sleep/about/">CDC adult sleep guidance</a
+          >. HRV interpretation follows
+          <a
+            href="https://www.garmin.com/en-US/blog/fitness/understanding-the-hrv-status-on-your-garmin-smartwatch/"
+            >Garmin’s personal-baseline explanation</a
+          >. See Garmin’s
+          <a
+            href="https://www8.garmin.com/manuals/webhelp/GUID-BD965919-30AA-4EB5-95D7-A899658C50EB/EN-US/GUID-44C7BB4B-EFF7-4A42-AC03-8A6AABB94807.html"
+            >training status documentation</a
+          >
+          for its longer-term measures.
+        </p>
+        <details id="daily-detail">
+          <summary>Daily readings</summary>
+          <div>{{DAILY}}</div>
+        </details>
+      </section>
+      <footer>
+        Source: Garmin Connect Personal API · Retrieved {{RETRIEVED}}<br />Pull
+        Garmin Data · report generator {{VERSION}} · Portable HTML; charts and
+        controls work offline.
+      </footer>
+    </main>
+    <div id="tooltip" role="tooltip" hidden></div>
+    <!-- prettier-ignore -->
+    <script id="report-data" type="application/json">{{DATA}}</script>
+    <script>
+      "use strict";
+      (() => {
+        const data = JSON.parse(
+          document.getElementById("report-data").textContent,
+        );
+        const byId = (id) => document.getElementById(id);
+        byId("exports").hidden = false;
+        byId("filters").hidden = false;
+        const search = byId("search"),
+          sport = byId("sport");
+        const rows = Array.from(
+          document.querySelectorAll("#sessions tbody tr"),
+        );
+        const logRows = data.activities.length ? rows : [];
+        [...new Set(data.activities.map((a) => a.sport))]
+          .sort()
+          .forEach((name) => {
+            const option = document.createElement("option");
+            option.value = name;
+            option.textContent = name;
+            sport.appendChild(option);
+          });
+        function filter() {
+          let shown = 0;
+          logRows.forEach((row) => {
+            const match =
+              row.textContent
+                .toLowerCase()
+                .includes(search.value.trim().toLowerCase()) &&
+              (!sport.value || row.cells[1].textContent === sport.value);
+            row.hidden = !match;
+            if (match) shown++;
+          });
+          byId("count").textContent =
+            `${shown} of ${data.activities.length} retrieved activities shown`;
+        }
+        search.addEventListener("input", filter);
+        sport.addEventListener("change", filter);
+        byId("reset").addEventListener("click", () => {
+          search.value = "";
+          sport.value = "";
+          filter();
+        });
+        filter();
+        function download(contents, type, extension) {
+          const url = URL.createObjectURL(new Blob([contents], { type }));
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `garmin-${data.start}-to-${data.end}.${extension}`;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+        byId("json").addEventListener("click", () =>
+          download(JSON.stringify(data, null, 2), "application/json", "json"),
+        );
+        const cell = (value) => {
+          let text = String(value ?? "");
+          if (/^[=+@\-\t\r]/.test(text)) text = "'" + text;
+          return '"' + text.replace(/"/g, '""') + '"';
+        };
+        byId("csv").addEventListener("click", () => {
+          const columns = [
+            "date",
+            "sport",
+            "minutes",
+            "distanceKm",
+            "averageHeartRate",
+            "exerciseLoad",
+            "benefit",
+          ];
+          download(
+            [columns, ...data.activities.map((a) => columns.map((k) => a[k]))]
+              .map((row) => row.map(cell).join(","))
+              .join("\r\n"),
+            "text/csv;charset=utf-8",
+            "csv",
+          );
+        });
+        const detail = byId("daily-detail");
+        let wasOpen = false;
+        window.addEventListener("beforeprint", () => {
+          wasOpen = detail.open;
+          detail.open = true;
+        });
+        window.addEventListener("afterprint", () => {
+          detail.open = wasOpen;
+        });
+        byId("print").addEventListener("click", () => window.print());
+        const tooltip = byId("tooltip");
+        function show(element, event) {
+          tooltip.textContent = element.dataset.tip;
+          tooltip.hidden = false;
+          const rect = element.getBoundingClientRect();
+          const x = event.clientX ?? rect.left,
+            y = event.clientY ?? rect.bottom;
+          tooltip.style.left =
+            Math.max(
+              8,
+              Math.min(x + 12, window.innerWidth - tooltip.offsetWidth - 8),
+            ) + "px";
+          tooltip.style.top =
+            Math.max(
+              8,
+              Math.min(y + 12, window.innerHeight - tooltip.offsetHeight - 8),
+            ) + "px";
+        }
+        document.querySelectorAll("[data-tip]").forEach((element) => {
+          element.addEventListener("pointerenter", (event) =>
+            show(element, event),
+          );
+          element.addEventListener("focus", () => show(element, {}));
+          element.addEventListener(
+            "pointerleave",
+            () => (tooltip.hidden = true),
+          );
+          element.addEventListener("blur", () => (tooltip.hidden = true));
+        });
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") tooltip.hidden = true;
+        });
+      })();
+    </script>
+  </body>
+</html>
